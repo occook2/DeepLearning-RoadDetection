@@ -110,7 +110,7 @@ class Detector(torch.nn.Module):
         in_channels: int = 3,
         num_classes: int = 3,
         channels_l0 = 64,
-        n_blocks = 1
+        n_blocks = 2
     ):
         """
         A single model that performs segmentation and depth regression
@@ -123,24 +123,34 @@ class Detector(torch.nn.Module):
 
         self.register_buffer("input_mean", torch.as_tensor(INPUT_MEAN))
         self.register_buffer("input_std", torch.as_tensor(INPUT_STD))
-
-        # Encoder - Separated each step, could use blocks but want ability to use residuals
+        
+        # ENCODER
+        # Special first layer
         self.special_conv = nn.Conv2d(in_channels, channels_l0, kernel_size=11, stride=2, padding=5)
         self.relu = nn.ReLU()
 
-        # Add downblock
-        self.down_block1 = self.DownBlock(channels_l0, channels_l0 * 2)
-        
-        # Up sample
-        self.up_block1 = self.UpBlock(channels_l0 * 2, channels_l0)
-        self.up_block2 = self.UpBlock(channels_l0, channels_l0)
+        self.encoder_blocks = nn.ModuleList()
+        self.decoder_blocks = nn.ModuleList()
+
+        # Loop for blocks
+        c1 = channels_l0
+        for _ in range(n_blocks):
+            c2 = c1 * 2
+            self.encoder_blocks.append(self.DownBlock(c1, c2))
+            c1 = c2
+
+        # Build decoder
+        for _ in range(n_blocks + 1):  # +1 for symmetry with special_conv
+            c2 = c1 // 2
+            self.decoder_blocks.append(self.UpBlock(c1, c2))
+            c1 = c2
 
         # Segmentation head
-        self.seg_conv1 = nn.Conv2d(channels_l0, num_classes, kernel_size=3, padding=1)
+        self.seg_conv1 = nn.Conv2d(channels_l0 // 2, num_classes, kernel_size=3, padding=1)
 
         # Depth head
         self.depth_head = nn.Sequential(
-            nn.Conv2d(channels_l0, 1, kernel_size=3, padding=1),
+            nn.Conv2d(channels_l0 // 2, 1, kernel_size=3, padding=1),
             nn.Sigmoid()
         )
 
@@ -161,9 +171,12 @@ class Detector(torch.nn.Module):
         z = (x - self.input_mean[None, :, None, None]) / self.input_std[None, :, None, None]
 
         x = self.relu(self.special_conv(z))     # (B, 64, H/2, W/2)
-        x = self.down_block1(x)                 # (B, 128, H/4, W/4)
-        x = self.up_block1(x)                   # (B, 64, H/2, W/2)
-        x = self.up_block2(x)                   # (B, 64, H, W)
+        
+        for block in self.encoder_blocks:
+            x = block(x)
+
+        for block in self.decoder_blocks:
+            x = block(x)
 
         seg = self.seg_conv1(x)                 # (B, 3, H, W)
         depth = self.depth_head(x)
