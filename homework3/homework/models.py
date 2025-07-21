@@ -2,6 +2,7 @@ from pathlib import Path
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 HOMEWORK_DIR = Path(__file__).resolve().parent
 INPUT_MEAN = [0.2788, 0.2657, 0.2629]
@@ -96,17 +97,15 @@ class Detector(torch.nn.Module):
         self.register_buffer("input_std", torch.as_tensor(INPUT_STD))
 
         # Encoder - Separated each step, could use blocks but want ability to use residuals
-        self.conv1 = nn.Conv2d(in_channels, 16, kernel_size=3, padding=1)
-        self.relu1 = nn.ReLU()
-        self.conv2 = nn.Conv2d(16, 16, kernel_size=3, padding=1)
-        self.relu2 = nn.ReLU()
+        self.special_conv = nn.Conv2d(in_channels, channels_l0, kernel_size=11, stride=2, padding=5)
+        self.relu = nn.ReLU()
 
         # Segmentation head
-        self.seg_conv1 = nn.Conv2d(16, num_classes, kernel_size=3, padding=1)
+        self.seg_conv1 = nn.Conv2d(channels_l0, num_classes, kernel_size=3, padding=1)
 
         # Depth head
         self.depth_head = nn.Sequential(
-            nn.Conv2d(16, 1, kernel_size=3, padding=1),
+            nn.Conv2d(channels_l0, 1, kernel_size=3, padding=1),
             nn.Sigmoid()
         )
 
@@ -126,10 +125,15 @@ class Detector(torch.nn.Module):
         # optional: normalizes the input
         z = (x - self.input_mean[None, :, None, None]) / self.input_std[None, :, None, None]
 
-        encode = self.relu2(self.conv2(self.relu1(self.conv1(x))))
+        encode = self.relu(self.special_conv(x))
 
         seg = self.seg_conv1(encode)
-        depth = self.depth_head(encode)      
+        depth = self.depth_head(encode)
+
+        # Resize seg and depth
+        seg = F.interpolate(seg, size=x.shape[2:], mode='bilinear', align_corners=False)
+        depth = F.interpolate(depth, size=x.shape[2:], mode='bilinear', align_corners=False)
+      
         
         return seg, depth
 
