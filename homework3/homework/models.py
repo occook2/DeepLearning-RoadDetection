@@ -77,6 +77,25 @@ class Classifier(nn.Module):
 
 
 class Detector(torch.nn.Module):
+    class DownBlock(nn.Module):
+        def __init__(self, in_channels, out_channels, num_layers=2):
+            super().__init__()
+            layers = []
+
+            # First layer: downsampling
+            layers.append(nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=2, padding=1))
+            layers.append(nn.ReLU())
+
+            # Remaining layers: regular convs with same output channels
+            for _ in range(num_layers - 1):
+                layers.append(nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1))
+                layers.append(nn.ReLU())
+
+            self.block = nn.Sequential(*layers)
+
+        def forward(self, x):
+            return self.block(x)
+    
     class UpBlock(nn.Module):
         def __init__(self, in_channels, out_channels):
             super().__init__()
@@ -109,7 +128,12 @@ class Detector(torch.nn.Module):
         self.special_conv = nn.Conv2d(in_channels, channels_l0, kernel_size=11, stride=2, padding=5)
         self.relu = nn.ReLU()
 
-        self.up_block = self.UpBlock(channels_l0, channels_l0)
+        # Add downblock
+        self.down_block1 = self.DownBlock(channels_l0, channels_l0 * 2)
+        
+        # Up sample
+        self.up_block1 = self.UpBlock(channels_l0 * 2, channels_l0)
+        self.up_block2 = self.UpBlock(channels_l0, channels_l0)
 
         # Segmentation head
         self.seg_conv1 = nn.Conv2d(channels_l0, num_classes, kernel_size=3, padding=1)
@@ -136,11 +160,13 @@ class Detector(torch.nn.Module):
         # optional: normalizes the input
         z = (x - self.input_mean[None, :, None, None]) / self.input_std[None, :, None, None]
 
-        encode = self.relu(self.special_conv(z))
-        unsampled = self.up_block(encode)
+        x = self.relu(self.special_conv(z))     # (B, 64, H/2, W/2)
+        x = self.down_block1(x)                 # (B, 128, H/4, W/4)
+        x = self.up_block1(x)                   # (B, 64, H/2, W/2)
+        x = self.up_block2(x)                   # (B, 64, H, W)
 
-        seg = self.seg_conv1(unsampled)
-        depth = self.depth_head(unsampled)
+        seg = self.seg_conv1(x)                 # (B, 3, H, W)
+        depth = self.depth_head(x)
         
         return seg, depth
 
