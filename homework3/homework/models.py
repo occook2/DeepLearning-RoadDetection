@@ -77,6 +77,15 @@ class Classifier(nn.Module):
 
 
 class Detector(torch.nn.Module):
+    class UpBlock(nn.Module):
+        def __init__(self, in_channels, out_channels):
+            super().__init__()
+            self.up = nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2)
+            self.relu = nn.ReLU()
+
+        def forward(self, x):
+            return self.relu(self.up(x))
+    
     def __init__(
         self,
         in_channels: int = 3,
@@ -99,6 +108,8 @@ class Detector(torch.nn.Module):
         # Encoder - Separated each step, could use blocks but want ability to use residuals
         self.special_conv = nn.Conv2d(in_channels, channels_l0, kernel_size=11, stride=2, padding=5)
         self.relu = nn.ReLU()
+
+        self.up_block = self.UpBlock(channels_l0, channels_l0)
 
         # Segmentation head
         self.seg_conv1 = nn.Conv2d(channels_l0, num_classes, kernel_size=3, padding=1)
@@ -125,15 +136,11 @@ class Detector(torch.nn.Module):
         # optional: normalizes the input
         z = (x - self.input_mean[None, :, None, None]) / self.input_std[None, :, None, None]
 
-        encode = self.relu(self.special_conv(x))
+        encode = self.relu(self.special_conv(z))
+        unsampled = self.up_block(encode)
 
-        seg = self.seg_conv1(encode)
-        depth = self.depth_head(encode)
-
-        # Resize seg and depth
-        seg = F.interpolate(seg, size=x.shape[2:], mode='bilinear', align_corners=False)
-        depth = F.interpolate(depth, size=x.shape[2:], mode='bilinear', align_corners=False)
-      
+        seg = self.seg_conv1(unsampled)
+        depth = self.depth_head(unsampled)
         
         return seg, depth
 
