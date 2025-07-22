@@ -95,7 +95,7 @@ def train(
             
             # Get Model Prediction
             seg_logits, pred_depth = model(img)
-            
+            print(pred_depth.shape)
             # Calculate Loss
             seg_loss_val = seg_loss(seg_logits, target_track)
             depth_loss_val = depth_loss(pred_depth, target_depth)

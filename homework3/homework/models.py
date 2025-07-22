@@ -134,23 +134,29 @@ class Detector(torch.nn.Module):
 
         # Loop for blocks
         c1 = channels_l0
+        channels = [in_channels, channels_l0]
         for _ in range(n_blocks):
             c2 = c1 * 2
             self.encoder_blocks.append(self.DownBlock(c1, c2))
             c1 = c2
+            channels.append(c2)
 
         # Build decoder
-        for _ in range(n_blocks + 1):  # +1 for symmetry with special_conv
-            c2 = c1 // 2
+        c2 = c1 // 2
+        for i in range(n_blocks):  # +1 for symmetry with special_conv
             self.decoder_blocks.append(self.UpBlock(c1, c2))
-            c1 = c2
+            c1 = c2 + channels[len(channels) - 2 - i]
+            c2 = c1 // 2
+
+        # Final UBlock to recover spatial dimensions
+        self.up_final = self.UpBlock(c1, c2)
 
         # Segmentation head
-        self.seg_conv1 = nn.Conv2d(channels_l0 // 2, num_classes, kernel_size=3, padding=1)
+        self.seg_conv1 = nn.Conv2d(c2, num_classes, kernel_size=3, padding=1)
 
         # Depth head
         self.depth_head = nn.Sequential(
-            nn.Conv2d(channels_l0 // 2, 1, kernel_size=3, padding=1),
+            nn.Conv2d(c2, 1, kernel_size=3, padding=1),
             nn.Sigmoid()
         )
 
@@ -167,17 +173,27 @@ class Detector(torch.nn.Module):
                 - logits (b, num_classes, h, w)
                 - depth (b, h, w)
         """
+        encoder_feats = []
+
         # optional: normalizes the input
         z = (x - self.input_mean[None, :, None, None]) / self.input_std[None, :, None, None]
 
+        # Special first layer
         x = self.relu(self.special_conv(z))     # (B, 64, H/2, W/2)
         
         for block in self.encoder_blocks:
-            x = block(x)
+            encoder_feats.append(x) # Will hold all skip connection features, skips last encoder block
+            x = block(x)    
 
-        for block in self.decoder_blocks:
+        for i, block in enumerate(self.decoder_blocks):
             x = block(x)
+            skip = encoder_feats[len(encoder_feats) - 1 -i]
+            x = torch.cat([x, skip], dim=1) # Skip Connection
 
+        # Final Up Block to Recover spatial dims of original images
+        x = self.up_final(x)
+
+        # Separate into respective heads
         seg = self.seg_conv1(x)                 # (B, 3, H, W)
         depth = self.depth_head(x)
         
@@ -200,8 +216,8 @@ class Detector(torch.nn.Module):
         pred = logits.argmax(dim=1)
 
         # Optional additional post-processing for depth only if needed
-        depth = raw_depth
-
+        depth = raw_depth.squeeze(1)
+        
         return pred, depth
 
 
