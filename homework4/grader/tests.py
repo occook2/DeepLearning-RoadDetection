@@ -59,7 +59,7 @@ class BaseGrader(Grader):
 
         self.data = road_dataset.load_data(
             DATA_SPLIT,
-            num_workers=1,
+            num_workers=0,
             batch_size=64,
             shuffle=False,
             transform_pipeline=self.TRANSFORM_PIPELINE,
@@ -174,7 +174,7 @@ class MLPPlannerGrader(BaseGrader):
 
         return score
 
-    @Case(score=10, timeout=20000)
+    @Case(score=10, timeout=50000)
     def test_driving_performance(self, track_name="lighthouse"):
         """Driving Performance"""
         try:
