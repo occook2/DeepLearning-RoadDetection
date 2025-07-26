@@ -8,7 +8,7 @@ INPUT_MEAN = [0.2788, 0.2657, 0.2629]
 INPUT_STD = [0.2064, 0.1944, 0.2252]
 
 
-class MLPPlanner(nn.Module):
+class MLPPlanner(nn.Module):    
     def __init__(
         self,
         n_track: int = 10,
@@ -23,16 +23,18 @@ class MLPPlanner(nn.Module):
 
         self.n_track = n_track
         self.n_waypoints = n_waypoints
+        self.register_buffer("input_mean", torch.tensor([0.03162788227200508, 11.780111312866211]))
+        self.register_buffer("input_std", torch.tensor([5.585452079772949, 5.992654800415039]))
 
         input_dim = n_track * 2 * 2
         output_dim = n_waypoints * 2
 
         self.net = nn.Sequential(
-            nn.Linear(input_dim, 128),
+            nn.Linear(input_dim, 64),
             nn.ReLU(),
-            nn.Linear(128, 64),
+            nn.Linear(64, 16),
             nn.ReLU(),
-            nn.Linear(64, output_dim),  # Output 3 waypoints × 2D
+            nn.Linear(16, output_dim),  # Output 3 waypoints × 2D
         )
 
     def forward(
@@ -55,7 +57,9 @@ class MLPPlanner(nn.Module):
             torch.Tensor: future waypoints with shape (b, n_waypoints, 2)
         """
         x = torch.cat([track_left, track_right], dim=1)  # (B, 2 * n_track, 2)
-        x = x.view(x.size(0), -1)  # (B, input_dim)
+        x = x.view(x.size(0), -1, 2)
+        x = (x- self.input_mean) / self.input_std
+        x = x.view(x.size(0), -1)
         out = self.net(x)  # (B, output_dim)
         return out.view(-1, self.n_waypoints, 2)
 

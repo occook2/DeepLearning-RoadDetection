@@ -54,11 +54,13 @@ def train(
     print(f'Total loading time: {(load_end - load_start):.2f} sec')
 
     # create loss function and optimizer
-    loss_func = nn.MSELoss()
+    loss_func = nn.L1Loss()
     optimizer = torch.optim.Adam(model.parameters(), lr = lr)
 
     global_step = 0
-    metrics = {"train_loss": [], "val_loss": []}
+    metrics = {"train_loss": [], "train_long_error": [], "train_lat_error": [], "val_loss": [], "val_long_error": [], "val_lat_error": [],}
+
+    best_val_loss = float('inf')
 
     # training loop
     for epoch in range(num_epoch):
@@ -89,8 +91,8 @@ def train(
             pred = model(track_left, track_right)
             
             # Manually calculating loss value to use waypoint mask - can convert to loss function if I don't want to mask
-            loss_val = ((pred - waypoints) ** 2).sum(dim=-1)  # (B, 3)
-            loss_val = loss_val * waypoints_mask  # (B, 3), mask out invalid ones
+            loss_val = (pred - waypoints).abs()  # (B, 3, 2)
+            loss_val = loss_val * waypoints_mask[..., None]  # (B, 3, 2), mask out invalid ones
             loss_val = loss_val.sum() / waypoints_mask.sum()  # scalar average
 
 
@@ -119,25 +121,43 @@ def train(
 
                 # TODO: compute validation accuracy
                 pred = model(track_left, track_right)
+                error = (pred - waypoints).abs() * waypoints_mask[..., None]
+                long_error = error[:, :, 0].sum() / waypoints_mask.sum()
+                lat_error = error[:, :, 1].sum() / waypoints_mask.sum()
 
                 loss_val = ((pred - waypoints) ** 2).sum(dim=-1)
                 loss_val = loss_val * waypoints_mask
                 loss_val = loss_val.sum() / waypoints_mask.sum()
 
                 metrics["val_loss"].append(loss_val.item())
+                metrics["val_long_error"].append(long_error.item())
+                metrics["val_lat_error"].append(lat_error.item())
+
+
 
         # log average train and val accuracy to tensorboard
         epoch_train_loss = torch.as_tensor(metrics["train_loss"]).mean()
         epoch_val_loss = torch.as_tensor(metrics["val_loss"]).mean()
+        epoch_val_long_error = torch.as_tensor(metrics["val_long_error"]).mean()
+        epoch_val_lat_error = torch.as_tensor(metrics["val_lat_error"]).mean()
+
+        if epoch_val_loss < best_val_loss:
+            best_model = model
+            best_epoch = epoch
+            best_val_loss = epoch_val_loss
 
         logger.add_scalar('train/loss', sum(metrics["train_loss"]) / len(metrics["train_loss"]), global_step)
         logger.add_scalar('val/loss', sum(metrics["val_loss"]) / len(metrics["val_loss"]), global_step)
+        logger.add_scalar('val/long_error', sum(metrics["val_long_error"]) / len(metrics["val_long_error"]), global_step)
+        logger.add_scalar('val/lat_error', sum(metrics["val_lat_error"]) / len(metrics["val_lat_error"]), global_step)
 
         # Print information for each epoch
         print(
-            f"Epoch {epoch + 1:2d} / {num_epoch:2d}: "
-            f"train_loss={epoch_train_loss:.4f} "
-            f"val_loss={epoch_val_loss:.4f}"
+            f"Epoch {epoch + 1:2d} / {num_epoch:2d}: \n"
+            f"train_loss={epoch_train_loss:.4f} \n"
+            f"val_loss={epoch_val_loss:.4f} \n"
+            f"val_long_loss={epoch_val_long_error}\n"
+            f"val_lat_loss={epoch_val_lat_error}"
         )
         print(f"  Total epoch time      : {total_epoch_time:.2f} sec")
         print(f"  Data loading time     : {data_loading_time:.2f} sec")
@@ -146,9 +166,8 @@ def train(
     
     # Save model for grader
     save_model(model)
+    print(f'Best model occured on epoch {best_epoch + 1}')
 
-    # Optional: also save a copy to your log directory
-    torch.save(model.state_dict(), log_dir / "classifier.th")
     print(f"Model saved to {log_dir / 'classifier.th'}")
 
 if __name__ == "__main__":
