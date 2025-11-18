@@ -70,6 +70,8 @@ class TransformerPlanner(nn.Module):
         n_track: int = 10,
         n_waypoints: int = 3,
         d_model: int = 64,
+        dropout = 0.1,
+        num_layers = 2
     ):
         super().__init__()
 
@@ -77,6 +79,13 @@ class TransformerPlanner(nn.Module):
         self.n_waypoints = n_waypoints
 
         self.query_embed = nn.Embedding(n_waypoints, d_model)
+
+        self.input_proj = nn.Linear(2, d_model)
+
+        decoder_layer = nn.TransformerDecoderLayer(d_model=d_model, nhead=4, dropout=dropout, batch_first=True)
+        self.decoder = nn.TransformerDecoder(decoder_layer, num_layers=num_layers)
+
+        self.output_proj = nn.Linear(d_model, 2)
 
     def forward(
         self,
@@ -97,7 +106,17 @@ class TransformerPlanner(nn.Module):
         Returns:
             torch.Tensor: future waypoints with shape (b, n_waypoints, 2)
         """
-        raise NotImplementedError
+        B = track_left.size(0)
+        device = track_left.device
+
+        track = torch.cat([track_left, track_right], dim=1)
+
+        memory = self.input_proj(track)
+
+        query = self.query_embed.weight.unsqueeze(0).repeat(B, 1, 1)
+        decoded = self.decoder(tgt=query, memory=memory)
+
+        return self.output_proj(decoded)
 
 
 class CNNPlanner(torch.nn.Module):
