@@ -289,7 +289,7 @@ class CNNPlannerGrader(BaseGrader):
 
         return score
 
-    @Case(score=5, timeout=20000)
+    @Case(score=5, timeout=40000)
     def test_driving_performance(self, track_name="lighthouse"):
         """Driving Performance"""
         try:

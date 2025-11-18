@@ -120,9 +120,41 @@ class TransformerPlanner(nn.Module):
 
 
 class CNNPlanner(torch.nn.Module):
+    class DownBlock(nn.Module):
+        def __init__(self, in_channels, out_channels, num_layers=2):
+            super().__init__()
+            layers = []
+
+            # First layer: downsampling
+            layers.append(nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=2, padding=1))
+            layers.append(nn.ReLU())
+
+            # Remaining layers: regular convs with same output channels
+            for _ in range(num_layers - 1):
+                layers.append(nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1))
+                layers.append(nn.ReLU())
+
+            self.block = nn.Sequential(*layers)
+
+        def forward(self, x):
+            return self.block(x)
+    
+    class UpBlock(nn.Module):
+        def __init__(self, in_channels, out_channels):
+            super().__init__()
+            self.up = nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2)
+            self.relu = nn.ReLU()
+
+        def forward(self, x):
+            return self.relu(self.up(x))
+    
     def __init__(
         self,
         n_waypoints: int = 3,
+        in_channels: int = 3,
+        num_classes: int = 3,
+        channels_l0 = 64,
+        n_blocks = 2
     ):
         super().__init__()
 
@@ -130,8 +162,42 @@ class CNNPlanner(torch.nn.Module):
 
         self.register_buffer("input_mean", torch.as_tensor(INPUT_MEAN), persistent=False)
         self.register_buffer("input_std", torch.as_tensor(INPUT_STD), persistent=False)
+        
+        # ENCODER
+        # Special first layer
+        self.special_conv = nn.Conv2d(in_channels, channels_l0, kernel_size=11, stride=2, padding=5)
+        self.relu = nn.ReLU()
 
-    def forward(self, image: torch.Tensor, **kwargs) -> torch.Tensor:
+        self.encoder_blocks = nn.ModuleList()
+        self.decoder_blocks = nn.ModuleList()
+
+        # Loop for blocks
+        c1 = channels_l0
+        channels = [in_channels, channels_l0]
+        for _ in range(n_blocks):
+            c2 = c1 * 2
+            self.encoder_blocks.append(self.DownBlock(c1, c2))
+            c1 = c2
+            channels.append(c2)
+
+        # Build decoder
+        c2 = c1 // 2
+        for i in range(n_blocks):  # +1 for symmetry with special_conv
+            self.decoder_blocks.append(self.UpBlock(c1, c2))
+            c1 = c2 + channels[len(channels) - 2 - i]
+            c2 = c1 // 2
+
+        # Final UBlock to recover spatial dimensions
+        self.up_final = self.UpBlock(c1, c2)
+
+        # Final Layer
+        self.global_avg_pool = nn.AdaptiveAvgPool2d((1, 1))
+        self.final_layer = nn.Linear(c2, n_waypoints * 2)
+
+        # Segmentation head
+        self.seg_head = nn.Conv2d(c2, num_classes, kernel_size=3, padding=1)
+
+    def forward(self, image: torch.Tensor, train = False, **kwargs) -> torch.Tensor:
         """
         Args:
             image (torch.FloatTensor): shape (b, 3, h, w) and vals in [0, 1]
@@ -142,7 +208,29 @@ class CNNPlanner(torch.nn.Module):
         x = image
         x = (x - self.input_mean[None, :, None, None]) / self.input_std[None, :, None, None]
 
-        raise NotImplementedError
+        encoder_feats = []
+
+        # Special first layer
+        x = self.relu(self.special_conv(x))     # (B, 64, H/2, W/2)
+        
+        for block in self.encoder_blocks:
+            encoder_feats.append(x) # Will hold all skip connection features, skips last encoder block
+            x = block(x)    
+
+        for i, block in enumerate(self.decoder_blocks):
+            x = block(x)
+            skip = encoder_feats[len(encoder_feats) - 1 -i]
+            x = torch.cat([x, skip], dim=1) # Skip Connection
+
+        # Final Up Block to Recover spatial dims of original images
+        x = self.up_final(x)
+
+        # Find waypoints from images
+        y = self.global_avg_pool(x)
+        y = y.view(x.size(0), -1)
+        waypoints = self.final_layer(y).view(-1, self.n_waypoints, 2)
+        
+        return waypoints
 
 
 MODEL_FACTORY = {
