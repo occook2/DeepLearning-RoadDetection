@@ -71,6 +71,29 @@ The projects follow a natural progression in deep learning:
    python -c "import torch; print(f'PyTorch {torch.__version__}'); print(f'CUDA available: {torch.cuda.is_available()}'); print(f'MPS available: {torch.backends.mps.is_available()}')"
    ```
 
+4. **Download datasets (Required):**
+   
+   Each project requires downloading its dataset before training. Run the download script for each project:
+   
+   ```bash
+   # MLP Image Classification
+   cd mlp-image-classification/src
+   python download_data.py
+   cd ../..
+   
+   # CNN Multi-Task Detection
+   cd cnn-multitask-detection/src
+   python download_data.py
+   cd ../..
+   
+   # Transformer Autonomous Planner
+   cd transformer-autonomous-planner/src
+   python download_data.py
+   cd ../..
+   ```
+   
+   **Note:** The download scripts will automatically place datasets in the correct directories. The datasets are not included in the repository due to size constraints.
+
 ## 📚 Projects
 
 ### 1. MLP Image Classification
@@ -97,9 +120,16 @@ Explores the impact of network depth and residual connections on image classific
 | MLPClassifierDeep | 4 hidden layers (16 units each) | ~200K | 80%+ |
 | MLPClassifierDeepResidual | Residual blocks + LayerNorm | ~200K | 80%+ |
 
-#### Training Command
+#### Quick Start
+
+**1. Download the dataset:**
 ```bash
-cd mlp-image-classification/homework
+cd mlp-image-classification/src
+python download_data.py
+```
+
+**2. Train a model:**
+```bash
 python train.py --model <model_name> --epochs 50 --lr 1e-3 --batch_size 256
 ```
 
@@ -157,11 +187,18 @@ Implements convolutional neural networks for two tasks:
   - Depth MAE < 0.05
   - Boundary depth MAE < 0.05
 
-#### Training Commands
+#### Quick Start
+
+**1. Download the datasets:**
+```bash
+cd cnn-multitask-detection/src
+python download_data.py
+```
+
+**2. Train models:**
 
 **Train CNN Classifier:**
 ```bash
-cd cnn-multitask-detection/homework
 python train_classification.py --epochs 50 --lr 1e-3 --batch_size 256
 ```
 
@@ -233,11 +270,18 @@ Implements three different architectures for autonomous driving trajectory predi
 - Direct regression to waypoint coordinates
 - End-to-end learning from pixels
 
-#### Training Commands
+#### Quick Start
+
+**1. Download the dataset:**
+```bash
+cd transformer-autonomous-planner/src
+python download_data.py
+```
+
+**2. Train models:**
 
 **Train MLP Planner:**
 ```bash
-cd transformer-autonomous-planner/homework
 python train_planner.py --model mlp --epochs 50 --lr 1e-3 --batch_size 256
 ```
 
@@ -430,7 +474,7 @@ This portfolio demonstrates proficiency in:
 ## 🙏 Acknowledgments
 
 - Dataset: SuperTuxKart open-source racing game
-- Course: Deep Learning (Master's Program)
+- Course: UT Austin's MSAI Program's Deep Learning Course (Master's Program)
 - Framework: PyTorch
 
 ## 📄 License
