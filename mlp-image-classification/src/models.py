@@ -212,9 +212,11 @@ def save_model(model):
     """
     Use this function to save your model in train.py
     """
+    models_dir = Path(__file__).resolve().parent.parent / "models"
+    models_dir.mkdir(exist_ok=True)
     for n, m in model_factory.items():
         if isinstance(model, m):
-            return torch.save(model.state_dict(), Path(__file__).resolve().parent / f"{n}.th")
+            return torch.save(model.state_dict(), models_dir / f"{n}.th")
     raise ValueError(f"Model type '{str(type(model))}' not supported")
 
 
@@ -224,7 +226,7 @@ def load_model(model_name: str, with_weights: bool = False, **model_kwargs):
     """
     r = model_factory[model_name](**model_kwargs)
     if with_weights:
-        model_path = Path(__file__).resolve().parent / f"{model_name}.th"
+        model_path = Path(__file__).resolve().parent.parent / "models" / f"{model_name}.th"
         assert model_path.exists(), f"{model_path.name} not found"
         try:
             r.load_state_dict(torch.load(model_path, map_location="cpu"))
