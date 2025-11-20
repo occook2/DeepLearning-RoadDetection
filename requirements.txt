@@ -1,0 +1,25 @@
+# Deep Learning Portfolio - Unified Requirements
+# Compatible with PyTorch on CPU, CUDA, and Apple Silicon (MPS)
+
+# Core Deep Learning Framework
+# Install PyTorch according to your platform:
+# - CPU only: pip install torch torchvision
+# - CUDA (NVIDIA GPU): pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+# - Apple Silicon (MPS): pip install torch torchvision
+torch>=2.0.0
+torchvision>=0.15.0
+
+# Visualization and Logging
+matplotlib>=3.5.0
+tensorboard>=2.0.0
+
+# Image Processing
+Pillow>=10.0.0
+opencv-python>=4.10.0
+
+# Utilities
+termcolor==2.4.0
+tqdm==4.66.4
+
+# Optional: For interactive autonomous driving evaluation (Project 3)
+# PySuperTuxKart (installation instructions vary by platform)
