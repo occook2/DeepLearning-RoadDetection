@@ -251,7 +251,7 @@ def load_model(
     m = MODEL_FACTORY[model_name](**model_kwargs)
 
     if with_weights:
-        model_path = SRC_DIR / f"{model_name}.th"
+        model_path = SRC_DIR.parent / "models" / f"{model_name}.th"
         assert model_path.exists(), f"{model_path.name} not found"
 
         try:
@@ -283,7 +283,9 @@ def save_model(model: torch.nn.Module) -> str:
     if model_name is None:
         raise ValueError(f"Model type '{str(type(model))}' not supported")
 
-    output_path = SRC_DIR / f"{model_name}.th"
+    models_dir = SRC_DIR.parent / "models"
+    models_dir.mkdir(exist_ok=True)
+    output_path = models_dir / f"{model_name}.th"
     torch.save(model.state_dict(), output_path)
 
     return output_path

@@ -8,10 +8,9 @@ import torch
 import torch.nn as nn
 import torch.utils.tensorboard as tb
 
-from .models import load_model, save_model
-from .datasets import road_dataset
-
-from .utils import load_data
+from models import load_model, save_model
+from datasets import road_dataset
+from utils import load_data
 
 
 def train(
@@ -46,12 +45,13 @@ def train(
     model = model.to(device)
     model.train()
 
-    # Load Data
-    train_data = road_dataset.load_data("drive_data/train", shuffle=True, batch_size=batch_size, num_workers=0)
-    val_data = road_dataset.load_data("drive_data/val", shuffle=False, batch_size=batch_size, num_workers=0)
+    # Dataset is in the parent directory (transformer-autonomous-planner/)
+    data_path = Path(__file__).parent.parent / "drive_data"
+    train_data = road_dataset.load_data(str(data_path / "train"), shuffle=True, batch_size=batch_size, num_workers=0)
+    val_data = road_dataset.load_data(str(data_path / "val"), shuffle=False, batch_size=batch_size, num_workers=0)
 
-    train_data_target = load_data("drive_data/train", task="planner", batch_size=batch_size, shuffle=True)
-    val_data_target = load_data("drive_data/val", task="planner", batch_size=batch_size, shuffle=False)
+    train_data_target = load_data(str(data_path / "train"), task="planner", batch_size=batch_size, shuffle=True)
+    val_data_target = load_data(str(data_path / "val"), task="planner", batch_size=batch_size, shuffle=False)
 
     optimizer = torch.optim.Adam(model.parameters(), lr = lr)
 

@@ -10,8 +10,8 @@ import torch
 import torch.nn as nn
 import torch.utils.tensorboard as tb
 
-from .models import MLPPlanner, load_model, save_model
-from .utils import load_data
+from models import MLPPlanner, load_model, save_model
+from utils import load_data
 
 
 def train(
@@ -48,8 +48,10 @@ def train(
     # Load train and val data. Check time this takes
     print(f'Loading started')
     load_start = time.time()
-    train_data = load_data("drive_data/train", task="planner", batch_size=batch_size, shuffle=True)
-    val_data = load_data("drive_data/val", task="planner", batch_size=batch_size, shuffle=False)
+    # Dataset is in the parent directory (transformer-autonomous-planner/)
+    data_path = Path(__file__).parent.parent / "drive_data"
+    train_data = load_data(str(data_path / "train"), task="planner", batch_size=batch_size, shuffle=True)
+    val_data = load_data(str(data_path / "val"), task="planner", batch_size=batch_size, shuffle=False)
     load_end = time.time()
     print(f'Total loading time: {(load_end - load_start):.2f} sec')
 

@@ -6,7 +6,7 @@ from PIL import Image
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 
-from .datasets.road_dataset import load_data as load_road_data
+from datasets.road_dataset import load_data as load_road_data
 
 LABEL_NAMES = ["background", "kart", "pickup", "nitro", "bomb", "projectile"]
 

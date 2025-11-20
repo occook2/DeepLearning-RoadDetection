@@ -8,8 +8,8 @@ import torch
 import torch.nn as nn
 import torch.utils.tensorboard as tb
 
-from .models import MLPPlanner, load_model, save_model
-from .utils import load_data
+from models import MLPPlanner, load_model, save_model
+from utils import load_data
 
 def train(
     exp_dir: str = "logs",
@@ -44,9 +44,10 @@ def train(
     model = model.to(device)
     model.train()
 
-    # Load Data
-    train_data = load_data("drive_data/train", task="planner", batch_size=batch_size, shuffle=True)
-    val_data = load_data("drive_data/val", task="planner", batch_size=batch_size, shuffle=False)
+    # Dataset is in the parent directory (transformer-autonomous-planner/)
+    data_path = Path(__file__).parent.parent / "drive_data"
+    train_data = load_data(str(data_path / "train"), task="planner", batch_size=batch_size, shuffle=True)
+    val_data = load_data(str(data_path / "val"), task="planner", batch_size=batch_size, shuffle=False)
 
     # create loss function and optimizer
     loss_func = nn.L1Loss()
