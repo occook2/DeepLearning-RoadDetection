@@ -8,9 +8,9 @@ import torch
 import torch.nn as nn
 import torch.utils.tensorboard as tb
 
-from .models import Classifier, load_model, save_model
-from .datasets import road_dataset
-from .metrics import ConfusionMatrix
+from models import Classifier, load_model, save_model
+from datasets import road_dataset
+from metrics import ConfusionMatrix
 
 
 def train(

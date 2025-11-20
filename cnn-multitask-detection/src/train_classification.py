@@ -8,8 +8,8 @@ import torch
 import torch.nn as nn
 import torch.utils.tensorboard as tb
 
-from .models import Classifier, load_model, save_model
-from .utils import load_data
+from models import Classifier, load_model, save_model
+from utils import load_data
 
 
 def train(
