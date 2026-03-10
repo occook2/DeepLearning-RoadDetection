@@ -245,6 +245,27 @@ python train_detection.py --epochs 100 --lr 1e-3 --batch_size 128
 ---
 
 ### 3. Transformer Autonomous Planner
+#### Video Visualization
+
+You can visualize model predictions as videos using the built-in VideoVisualizer and save_video functions:
+
+- The class `VideoVisualizer` and function `save_video` are located in `transformer-autonomous-planner/src/supertux_utils/video_visualization.py`.
+- After training a model, use your inference script to collect prediction frames and save them as a video.
+- Example usage:
+  ```python
+  from supertux_utils.video_visualization import VideoVisualizer, save_video
+
+  visualizer = VideoVisualizer()
+  # For each sample, call visualizer.process(sample, debug_info)
+  # After processing all samples:
+  save_video(visualizer.frames, filename="output_video.mp4", fps=20)
+  ```
+- Make sure to install the required packages:
+  ```bash
+  pip install imageio imageio-ffmpeg
+  ```
+- You can extend your inference or evaluation script to generate videos for any trained model.
+
 
 **Directory:** `transformer-autonomous-planner/`
 
@@ -327,12 +348,6 @@ python train_cnn_planner.py --num_epoch 100 --lr 1e-3
 - TensorBoard logs with longitudinal/lateral error metrics
 - (Optional) Driving visualization videos in `videos/` directory
 
-#### Visualization
-The project includes tools for visualizing autonomous driving behavior:
-```bash
-# Generate driving videos (requires trained model)
-python utils.py --visualize --model cnn_planner.th
-```
 
 ---
 
