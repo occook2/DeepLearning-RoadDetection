@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional, Tuple
 
 import numpy as np
 import pystk
@@ -57,7 +58,7 @@ class BasePlanner:
         idx: int = 2,
         p_gain: float = 10.0,
         constant_acceleration: float = 0.2,
-    ) -> tuple[float, float, bool]:
+    ) -> Tuple[float, float, bool]:
         """
         Turns model predictions into steering, acceleration, and brake actions.
 
@@ -151,8 +152,8 @@ class Evaluator:
     def __init__(
         self,
         model: torch.nn.Module,
-        visualizer: VideoVisualizer | None = None,
-        device: str | None = None,
+        visualizer: Optional[VideoVisualizer] = None,
+        device: Optional[str] = None,
     ):
         if device is not None:
             self.device = torch.device(device)

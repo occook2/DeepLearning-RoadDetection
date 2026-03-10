@@ -245,27 +245,6 @@ python train_detection.py --epochs 100 --lr 1e-3 --batch_size 128
 ---
 
 ### 3. Transformer Autonomous Planner
-#### Video Visualization
-
-You can visualize model predictions as videos using the built-in VideoVisualizer and save_video functions:
-
-- The class `VideoVisualizer` and function `save_video` are located in `transformer-autonomous-planner/src/supertux_utils/video_visualization.py`.
-- After training a model, use your inference script to collect prediction frames and save them as a video.
-- Example usage:
-  ```python
-  from supertux_utils.video_visualization import VideoVisualizer, save_video
-
-  visualizer = VideoVisualizer()
-  # For each sample, call visualizer.process(sample, debug_info)
-  # After processing all samples:
-  save_video(visualizer.frames, filename="output_video.mp4", fps=20)
-  ```
-- Make sure to install the required packages:
-  ```bash
-  pip install imageio imageio-ffmpeg
-  ```
-- You can extend your inference or evaluation script to generate videos for any trained model.
-
 
 **Directory:** `transformer-autonomous-planner/`
 
@@ -346,7 +325,21 @@ python train_cnn_planner.py --num_epoch 100 --lr 1e-3
 #### Expected Outputs
 - Model checkpoints: `mlp_planner.th`, `transformer_planner.th`, `cnn_planner.th`
 - TensorBoard logs with longitudinal/lateral error metrics
-- (Optional) Driving visualization videos in `videos/` directory
+- Driving visualization videos in `videos/` directory
+
+#### Video Visualization
+
+Run a trained model in SuperTux and record an `.mp4` using the built-in evaluator. Run from the `transformer-autonomous-planner/` directory:
+
+```bash
+python -m src.supertux_utils.evaluate --model transformer_planner --track lighthouse --max-steps 200
+```
+
+**Available models:** `mlp_planner`, `transformer_planner`, `cnn_planner`
+
+**Available tracks:** `cornfield_crossing`, `hacienda`, `lighthouse`, `snowmountain`, `zengarden`
+
+Output is saved to `videos/<model>_<track>.mp4`.
 
 
 ---
@@ -421,18 +414,17 @@ DeepLearning-RoadDetection/
 │
 └── transformer-autonomous-planner/      # Project 3: Transformers
     ├── README.md
-    ├── requirements.txt
-    ├── logs/
+    ├── models/                          # Trained model checkpoints (*.th)
     ├── videos/                          # Driving visualizations
-    └── homework/
+    └── src/
         ├── models.py                    # MLP, Transformer, CNN planners
         ├── train_planner.py             # MLP training
         ├── train_transformer.py         # Transformer training
         ├── train_cnn_planner.py         # CNN training
         ├── metrics.py                   # Trajectory metrics
-        ├── utils.py                     # Visualization tools
+        ├── utils.py                     # Utilities
         ├── datasets/                    # Dataset loaders
-        └── *.th                         # Model checkpoints
+        └── supertux_utils/              # SuperTux evaluation & visualization
 ```
 
 ## 🛠️ Technical Details
@@ -481,8 +473,14 @@ print(torch.backends.mps.is_available())  # Should print True
 ### Issue: Module Not Found
 **Solution:** Ensure you're in the correct directory and have activated your environment:
 ```bash
-cd <project-directory>/homework
+cd <project-directory>/src
 python train.py
+```
+
+### Issue: `pystk` Not Found
+**Solution:** Install PySuperTuxKart (required for the SuperTux evaluator):
+```bash
+pip install PySuperTuxKart imageio imageio-ffmpeg
 ```
 
 ## 🎓 Learning Outcomes

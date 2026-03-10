@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from typing import Optional
 
 
 def save_video(
@@ -37,7 +38,7 @@ class VideoVisualizer:
         # Don't automatically show the plot in notebooks
         plt.close(fig)
 
-    def process(self, sample: dict, debug_info: dict | None = None):
+    def process(self, sample: dict, debug_info: Optional[dict] = None):
         """
         A simple visualization of the RGB image, track, and predicted waypoints.
         """

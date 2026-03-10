@@ -4,8 +4,8 @@ import numpy as np
 from torch.utils.data import ConcatDataset, DataLoader, Dataset
 from typing import Union
 
-from datasets import road_transforms
-from datasets.road_utils import Track
+from . import road_transforms
+from .road_utils import Track
 
 
 class RoadDataset(Dataset):
@@ -25,7 +25,7 @@ class RoadDataset(Dataset):
         info = np.load(self.episode_path / "info.npz", allow_pickle=True)
 
         self.track = Track(**info["track"].item())
-        self.frames: dict[str, np.ndarray] = {k: np.stack(v) for k, v in info["frames"].item().items()}
+        self.frames = {k: np.stack(v) for k, v in info["frames"].item().items()}
         self.transform = self.get_transform(transform_pipeline)
 
     def get_transform(self, transform_pipeline: str):

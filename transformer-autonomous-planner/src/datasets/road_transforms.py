@@ -17,7 +17,7 @@ import numpy as np
 from PIL import Image
 from torchvision import transforms as tv_transforms
 from typing import Tuple, Optional
-from datasets.road_utils import Track, homogeneous
+from .road_utils import Track, homogeneous
 
 
 def project(points, view, proj, h, w):

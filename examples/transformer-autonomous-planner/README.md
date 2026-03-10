@@ -31,16 +31,16 @@ This directory contains sample outputs and visualizations from the transformer a
 
 1. **Train all three planners:**
    ```bash
-   cd ../transformer-autonomous-planner/homework
-   
+   cd ../transformer-autonomous-planner/src
+
    # MLP Planner
-   python train_planner.py --model mlp --epochs 50
-   
+   python train_planner.py --model mlp --num_epoch 50
+
    # Transformer Planner
-   python train_transformer.py --epochs 50
-   
+   python train_transformer.py --num_epoch 50
+
    # CNN Planner
-   python train_cnn_planner.py --epochs 100
+   python train_cnn_planner.py --num_epoch 100
    ```
 
 2. **View TensorBoard:**
@@ -50,8 +50,12 @@ This directory contains sample outputs and visualizations from the transformer a
 
 3. **Generate driving videos:**
    ```bash
-   # Use the visualization tools in utils.py
-   python utils.py --visualize --model cnn_planner.th
+   cd ../transformer-autonomous-planner
+   python -m src.supertux_utils.evaluate --model transformer_planner --track lighthouse --max-steps 200
+   # Output saved to videos/transformer_planner_lighthouse.mp4
+
+   # Other available models: mlp_planner, cnn_planner
+   # Other available tracks: cornfield_crossing, hacienda, snowmountain, zengarden
    ```
 
 4. **Create comparison plots:**
