@@ -2,12 +2,7 @@
 # Compatible with PyTorch on CPU, CUDA, and Apple Silicon (MPS)
 
 # Core Deep Learning Framework
-# Install PyTorch according to your platform:
-# - CPU only: pip install torch torchvision
-# - CUDA (NVIDIA GPU): pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
-# - Apple Silicon (MPS): pip install torch torchvision
-torch>=2.0.0
-torchvision>=0.15.0
+# IMPORTANT: Install PyTorch and torchvision separately according to your platform (see README).
 
 # Visualization and Logging
 matplotlib>=3.5.0

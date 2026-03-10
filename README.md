@@ -62,24 +62,27 @@ Continue with the installation steps below after activating your conda environme
    cd DeepLearning-RoadDetection
    ```
 
-2. **Install dependencies:**
-   
-   The project automatically detects and uses available hardware (CUDA > MPS > CPU).
-   
-   **For CPU-only:**
+2. **Install PyTorch (choose your platform):**
+
+   PyTorch must be installed separately to ensure the correct CUDA or MPS support. Do NOT rely on requirements.txt for torch/torchvision installation.
+
+   - **For CPU-only:**
+     ```bash
+     pip install torch torchvision
+     ```
+
+   - **For NVIDIA GPU (CUDA 12.1):**
+     ```bash
+     pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+     ```
+
+   - **For Apple Silicon (M1/M2/M3):**
+     ```bash
+     pip install torch torchvision
+     ```
+
+3. **Install remaining dependencies:**
    ```bash
-   pip install -r requirements.txt
-   ```
-   
-   **For NVIDIA GPU (CUDA 12.1):**
-   ```bash
-   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
-   pip install -r requirements.txt
-   ```
-   
-   **For Apple Silicon (M1/M2/M3):**
-   ```bash
-   pip install torch torchvision
    pip install -r requirements.txt
    ```
 
@@ -299,17 +302,17 @@ python download_data.py
 
 **Train MLP Planner:**
 ```bash
-python train_planner.py --model mlp --epochs 50 --lr 1e-3 --batch_size 256
+python train_planner.py --model mlp --num_epoch 50 --lr 1e-3
 ```
 
 **Train Transformer Planner:**
 ```bash
-python train_transformer.py --epochs 50 --lr 5e-4 --batch_size 256
+python train_transformer.py --num_epoch 50 --lr 5e-4
 ```
 
 **Train CNN Planner:**
 ```bash
-python train_cnn_planner.py --epochs 100 --lr 1e-3 --batch_size 128
+python train_cnn_planner.py --num_epoch 100 --lr 1e-3
 ```
 
 #### Key Features

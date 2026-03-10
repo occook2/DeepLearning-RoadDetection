@@ -45,9 +45,14 @@ def train(
     model.train()
 
     # Dataset is in the parent directory (transformer-autonomous-planner/)
-    data_path = Path(__file__).parent.parent / "drive_data"
-    train_data = load_data(str(data_path / "train"), task="planner", batch_size=batch_size, shuffle=True)
-    val_data = load_data(str(data_path / "val"), task="planner", batch_size=batch_size, shuffle=False)
+    data_path = Path(__file__).resolve().parent.parent / "drive_data"
+    print("Data path:", data_path)
+    print("Absolute train path:", str(data_path / "train"))
+    print("Absolute val path:", str(data_path / "val"))
+    print("Train Exists:", (data_path / "train").exists())
+    print("Val Exists:", (data_path / "val").exists())
+    train_data = load_data(str((data_path / "train").resolve()), task="planner", batch_size=batch_size, shuffle=True)
+    val_data = load_data(str((data_path / "val").resolve()), task="planner", batch_size=batch_size, shuffle=False)
 
     # create loss function and optimizer
     loss_func = nn.L1Loss()

@@ -11,11 +11,12 @@ Design pattern of the transforms:
 
 from pathlib import Path
 
+
 import cv2
 import numpy as np
 from PIL import Image
 from torchvision import transforms as tv_transforms
-
+from typing import Tuple, Optional
 from datasets.road_utils import Track, homogeneous
 
 
@@ -53,7 +54,7 @@ def rasterize_lines(
         cv2.line(canvas, tuple(start), tuple(end), color, thickness)
 
 
-def pad(points: np.ndarray, max_length: int) -> tuple[np.ndarray, np.ndarray]:
+def pad(points: np.ndarray, max_length: int) -> Tuple[np.ndarray, np.ndarray]:
     """
     Pads/truncates the points to a set length
 
@@ -230,7 +231,7 @@ class EgoTrackProcessor:
         location: np.ndarray,
         front: np.ndarray,
         distance_down_track: float,
-        waypoints: np.ndarray | None = None,
+        waypoints: Optional[np.ndarray] = None,
         **kwargs,
     ):
         if waypoints is None:

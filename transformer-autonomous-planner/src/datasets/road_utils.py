@@ -1,6 +1,7 @@
-from functools import cached_property
 
+from functools import cached_property
 import numpy as np
+from typing import Optional
 
 
 def homogeneous(points: np.ndarray) -> np.ndarray:
@@ -16,8 +17,8 @@ def homogeneous(points: np.ndarray) -> np.ndarray:
 
 def interpolate_smooth(
     points: np.ndarray,
-    fixed_distance: float | None = None,
-    fixed_number: int | None = None,
+    fixed_distance: Optional[float] = None,
+    fixed_number: Optional[int] = None,
 ):
     """
     Args:
