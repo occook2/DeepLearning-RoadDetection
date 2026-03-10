@@ -37,6 +37,23 @@ The projects follow a natural progression in deep learning:
 - (Optional) NVIDIA GPU with CUDA support for faster training
 - (Optional) Apple Silicon Mac with MPS support
 
+### Conda Environment Setup (Recommended)
+
+To ensure a clean and reproducible environment, it is recommended to use [conda](https://docs.conda.io/en/latest/) for managing dependencies:
+
+1. **Create a new conda environment:**
+  ```bash
+  conda create -n dl-road python=3.8
+  conda activate dl-road
+  ```
+
+2. **(Optional) Update conda:**
+  ```bash
+  conda update -n base -c defaults conda
+  ```
+
+Continue with the installation steps below after activating your conda environment.
+
 ### Setup Instructions
 
 1. **Clone the repository:**
